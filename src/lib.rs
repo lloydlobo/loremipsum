@@ -56,7 +56,7 @@
 #![deny(missing_docs)]
 
 use anyhow::Result;
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 /// The generic lorem ipsum text read from file.
 ///
@@ -241,18 +241,18 @@ impl Lorem {
     /// thread 'tests::it_lorem_words' panicked at 'called `Option::unwrap()` on a `None` value', loremipsum/src/lib.rs:133:41
     /// ````
     pub fn words(count: usize) -> String {
-        let mut lorem: String = String::new();
-        let new: Lorem = Self::new();
-        (0..count).for_each(|_: usize| {
-            lorem.push_str(
-                new.paragraph
-                    .split_whitespace()
-                    .next()
-                    .expect("loremipsum::Lorem::words() failed to get next word."),
-            );
-            lorem.push(' ');
+        let mut result: Vec<&str> = Vec::<&str>::new();
+        let count_default: usize = Lorem::count_words();
+
+        let new: Lorem = Lorem::new();
+        let source: Vec<&str> = new.paragraph.split_whitespace().collect::<Vec<&str>>();
+
+        (1..=count).for_each(|i: usize| {
+            result.push(source[((i - 1) % count_default)]);
+            result.push(" ");
         });
-        lorem
+
+        String::from(result.concat().trim())
     }
 }
 
@@ -336,7 +336,7 @@ mod tests {
 
     #[test]
     fn it_lorem_words() {
-        let len: usize = Lorem::count_words();
+        let len: usize = Lorem::count_words() * 2usize;
         (1..=len).for_each(|i: usize| {
             let words_count: usize = Lorem::words(i).split_whitespace().count();
             assert_eq!(words_count, i);
@@ -419,31 +419,13 @@ mod tests {
             assert_eq!(x.len(), y.len());
         });
     }
-}
 
-/* // Not public API. Referenced by macro-generated code.
-// (Placeholder: credits to anyhow lib)
-#[doc(hidden)]
-pub mod __private {
-    use anyhow::Error;
-    use core::fmt::Arguments;
-
-    #[doc(hidden)]
-    #[inline]
-    #[cold]
-    pub fn format_err(args: Arguments) -> Error {
-        #[cfg(anyhow_no_fmt_arguments_as_str)]
-        let fmt_arguments_as_str = None::<&str>;
-        #[cfg(not(anyhow_no_fmt_arguments_as_str))]
-        let fmt_arguments_as_str = args.as_str();
-
-        if let Some(message) = fmt_arguments_as_str {
-            // anyhow!("literal"), can downcast to &'static str
-            Error::msg(message)
-        } else {
-            // anyhow!("interpolate {var}"), can downcast to String
-            Error::msg(format!("{}", args))
-        }
+    #[test]
+    fn it_wraps_words() {
+        let count_words: usize = Lorem::count_words();
+        (0..count_words * 4usize).for_each(|i: usize| {
+            let words = Lorem::words(count_words * i);
+            assert_eq!(words.split_whitespace().count(), count_words * i);
+        });
     }
 }
- */
