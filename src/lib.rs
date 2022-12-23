@@ -53,7 +53,7 @@
 //! # ```
 
 #![forbid(unsafe_code)]
-// #![deny(missing_docs)]
+#![deny(missing_docs)]
 
 use anyhow::Result;
 use std::error::Error;
@@ -136,22 +136,33 @@ impl Lorem {
     pub fn is_empty(&self) -> bool {
         self.paragraph.len() == 0
     }
+
+    /// Returns count of total `chars` in a [`Lorem`] instance.
+    /// - default is `440usize`.
     pub fn len_chars() -> usize {
         Self::new().paragraph.chars().count()
     }
+
+    /// Returns count of total paragraph in a [`Lorem`] instance.
+    /// - default is `1usize`.
     pub fn len_paras() -> usize {
         Self::new().paragraph.split_terminator('.').count()
     }
 
+    /// Returns count of total words in a [`Lorem`] instance.
+    /// - default is `64usize`.
     pub fn len_words() -> usize {
         Self::new().paragraph.split_whitespace().count()
     }
 
+    /// Creates a new [`Lorem`].
     pub fn new() -> Self {
         Self {
             paragraph: paragraph(),
         }
     }
+
+    /// Creates a new [`Lorem`] instance of paragraphs.
     pub fn paragraphs(count: usize) -> String {
         let mut lorem: String = String::new();
         let new: Lorem = Self::new();
