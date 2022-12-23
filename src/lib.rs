@@ -107,23 +107,17 @@ impl Lorem {
         match count <= count_max {
             true => Self::new().paragraph.chars().take(count).collect(),
             false => {
-                let mut new: String = String::new(); // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
+                let paragraph: String = Self::new().paragraph;
+                let mut join_new = String::new();
                 (0..(count % count_max)).for_each(|_: usize| {
                     (0..count_max).for_each(|i: usize| {
-                        new.push_str(&Self::new().paragraph.chars().nth(i).unwrap().to_string());
+                        // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
+                        join_new.push_str(&paragraph.chars().nth(i).unwrap().to_string());
                     });
                 });
-                Self::new().paragraph + new.as_str()
+                paragraph + join_new.as_str()
             }
         }
-    }
-
-    fn chars_one() -> String {
-        let mut lorem: String = String::from(LOREMIPSUM)
-            .split_whitespace()
-            .collect::<Vec<&str>>()
-            .join(" ");
-        lorem
     }
 
     /// Returns count of total `chars` in a [`Lorem`] instance.
