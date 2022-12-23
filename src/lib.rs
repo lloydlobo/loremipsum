@@ -52,10 +52,15 @@
 //! # cargo watch -x "test -p loremipsum"
 //! # ```
 
+#![forbid(unsafe_code)]
+// #![deny(missing_docs)]
+
 use anyhow::Result;
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 
+/// The generic lorem ipsum text read from file.
+///
+/// See [wiki]: https://en.wikipedia.org/wiki/Lorem_ipsum
 pub const LOREMIPSUM: &str = include_str!("loremipsum.txt");
 
 /// `lorem_para` returns multiples of paragraphs.
@@ -81,8 +86,20 @@ pub fn lorem_para(count: usize) -> String {
     lorem
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+/// Implements struct for common methods to get lorem ipsum texts.
+///
+/// # Example
+///
+/// ```
+/// use loremipsum::Lorem;
+/// let text: String = Lorem::new().paragraph;
+/// assert_eq!(text.split_terminator('.').count(), Lorem::len_paras());
+/// assert_eq!(text.split_whitespace().count(), Lorem::len_words());
+/// assert_eq!(text.chars().count(), Lorem::len_chars());
+/// ```
+#[derive(Clone, Debug)]
 pub struct Lorem {
+    /// The default lorem impsum text.
     pub paragraph: String,
 }
 
@@ -92,6 +109,7 @@ impl Default for Lorem {
     }
 }
 impl Lorem {
+    /// Returns `count` number of characters.
     pub fn chars(count: usize) -> String {
         let mut lorem: String = String::new();
         let new: Lorem = Self::new();
@@ -106,22 +124,34 @@ impl Lorem {
         lorem
     }
 
-    pub fn len_letters() -> usize {
+    /// Returns the `is_empty` of this [`Lorem`].
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use loremipsum::Lorem;
+    /// let self_new = Lorem::new();
+    /// assert!(!Lorem::is_empty(&self_new));
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.paragraph.len() == 0
+    }
+    pub fn len_chars() -> usize {
         Self::new().paragraph.chars().count()
     }
     pub fn len_paras() -> usize {
         Self::new().paragraph.split_terminator('.').count()
     }
+
     pub fn len_words() -> usize {
         Self::new().paragraph.split_whitespace().count()
     }
 
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             paragraph: paragraph(),
         }
     }
-
     pub fn paragraphs(count: usize) -> String {
         let mut lorem: String = String::new();
         let new: Lorem = Self::new();
@@ -130,6 +160,7 @@ impl Lorem {
         });
         lorem
     }
+
     /// Implements `Lorem::words(count: usize)` to generate count number of words.
     ///
     /// # Example
@@ -244,7 +275,6 @@ pub fn run() -> Result<Vec<String>, Box<dyn Error>> {
 
     Ok(words)
 }
-
 /// Implements `read_lorem` that returns a `Result` containing a `String
 /// of the 'loremipsum` text data file.
 ///
