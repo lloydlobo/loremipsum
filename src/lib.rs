@@ -63,29 +63,6 @@ use std::error::Error;
 /// See [wiki]: https://en.wikipedia.org/wiki/Lorem_ipsum
 pub const LOREMIPSUM: &str = include_str!("loremipsum.txt");
 
-/// `lorem_para` returns multiples of paragraphs.
-///
-/// # Examples
-///
-/// ```
-/// use loremipsum::{paragraph, lorem_para};
-///
-/// let para = paragraph();
-/// let paragraph_1 = lorem_para(1usize);
-/// assert_eq!(para.len(), paragraph_1.len());
-/// let paragraph_2 = lorem_para(2usize);
-/// assert_eq!(para.len() * 2usize,  paragraph_2.len());
-/// ```
-pub fn lorem_para(count: usize) -> String {
-    let mut lorem: String = String::new();
-    let paragraph: String = paragraph();
-    (0..count).for_each(|_: usize| {
-        lorem.push_str(&paragraph);
-    });
-
-    lorem
-}
-
 /// Implements struct for common methods to get lorem ipsum texts.
 ///
 /// # Example
@@ -93,9 +70,9 @@ pub fn lorem_para(count: usize) -> String {
 /// ```
 /// use loremipsum::Lorem;
 /// let text: String = Lorem::new().paragraph;
-/// assert_eq!(text.split_terminator('.').count(), Lorem::len_paras());
-/// assert_eq!(text.split_whitespace().count(), Lorem::len_words());
-/// assert_eq!(text.chars().count(), Lorem::len_chars());
+/// assert_eq!(text.split_terminator('.').count(), Lorem::count_paras());
+/// assert_eq!(text.split_whitespace().count(), Lorem::count_words());
+/// assert_eq!(text.chars().count(), Lorem::count_chars());
 /// ```
 #[derive(Clone, Debug)]
 pub struct Lorem {
@@ -103,25 +80,112 @@ pub struct Lorem {
     pub paragraph: String,
 }
 
+/// Implements `Default` for [`Lorem`].
 impl Default for Lorem {
     fn default() -> Self {
         Self::new()
     }
 }
+
+/// Implements `Lorem` struct.
 impl Lorem {
     /// Returns `count` number of characters.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use loremipsum::Lorem;
+    /// let chars: String = Lorem::chars(5usize);
+    /// assert_eq!(chars, String::from("Lorem"));
+    /// ```
+    ///
+    /// It's important to remember that char represents a Unicode Scalar Value, and might not match your idea of what a 'character' is. Iteration over grapheme clusters may be what you actually want. This functionality is not provided by Rust's standard library, check crates.io instead.  
+    ///
+    ///
     pub fn chars(count: usize) -> String {
-        let mut lorem: String = String::new();
-        let new: Lorem = Self::new();
-        (0..count).for_each(|_: usize| {
-            lorem.push(
-                new.paragraph
-                    .chars()
-                    .next()
-                    .expect("loremipsum::Lorem::chars() failed to get next char."),
-            );
-        });
+        let count_max: usize = Lorem::count_chars();
+        match count <= count_max {
+            true => Self::new().paragraph.chars().take(count).collect(),
+            false => {
+                let mut new: String = String::new(); // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
+                (0..(count % count_max)).for_each(|_: usize| {
+                    (0..count_max).for_each(|i: usize| {
+                        new.push_str(&Self::new().paragraph.chars().nth(i).unwrap().to_string());
+                    });
+                });
+                Self::new().paragraph + new.as_str()
+            }
+        }
+    }
+
+    fn chars_one() -> String {
+        let mut lorem: String = String::from(LOREMIPSUM)
+            .split_whitespace()
+            .collect::<Vec<&str>>()
+            .join(" ");
         lorem
+    }
+
+    /// Returns count of total `chars` in a [`Lorem`] instance.
+    /// - default is `440usize`.
+    pub fn count_chars() -> usize {
+        Self::new().paragraph.chars().count()
+    }
+
+    /// Returns count of total paragraph in a [`Lorem`] instance.
+    /// - default is `1usize`.
+    pub fn count_paras() -> usize {
+        Self::new().paragraph.split_terminator('.').count()
+    }
+
+    /// Returns count of total words in a [`Lorem`] instance.
+    /// - default is `64usize`.
+    pub fn count_words() -> usize {
+        Self::new().paragraph.split_whitespace().count()
+    }
+
+    /// `create_new` returns a single paragraphs of lorem ipsum text.
+    ///
+    /// It is used in the `new()` method for [`Lorem`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use loremipsum::Lorem;
+    ///
+    /// let para = Lorem::new().paragraph;
+    /// let words = para.split_whitespace();
+    /// assert_eq!(words.last().unwrap(), "laborum.");
+    ///
+    /// let para = Lorem::new().paragraph;
+    /// let words: Vec<&str> = para.split_whitespace().collect::<Vec<_>>();
+    /// assert_eq!(words.first().unwrap().to_string(), String::from("Lorem"));
+    ///
+    /// ```
+    ///
+    /// - Word and letter counts:
+    ///
+    /// ```
+    /// use loremipsum::Lorem;
+    ///
+    /// let para = Lorem::new().paragraph;
+    /// assert_eq!(para.len(), 440usize);
+    ///
+    /// let words = para.split_whitespace();
+    /// assert_eq!(words.count(), 64usize);
+    ///
+    /// ```
+    fn create_new() -> String {
+        let new_paragraph: Vec<String> = run().expect("Failed to get lorem ipsum words");
+
+        let mut para_buf_as_string = String::new();
+
+        new_paragraph.iter().for_each(|word: &String| {
+            para_buf_as_string.push_str(word);
+            para_buf_as_string.push(' ');
+        });
+
+        para_buf_as_string.trim().to_string()
     }
 
     /// Returns the `is_empty` of this [`Lorem`].
@@ -137,28 +201,10 @@ impl Lorem {
         self.paragraph.len() == 0
     }
 
-    /// Returns count of total `chars` in a [`Lorem`] instance.
-    /// - default is `440usize`.
-    pub fn len_chars() -> usize {
-        Self::new().paragraph.chars().count()
-    }
-
-    /// Returns count of total paragraph in a [`Lorem`] instance.
-    /// - default is `1usize`.
-    pub fn len_paras() -> usize {
-        Self::new().paragraph.split_terminator('.').count()
-    }
-
-    /// Returns count of total words in a [`Lorem`] instance.
-    /// - default is `64usize`.
-    pub fn len_words() -> usize {
-        Self::new().paragraph.split_whitespace().count()
-    }
-
     /// Creates a new [`Lorem`].
     pub fn new() -> Self {
         Self {
-            paragraph: paragraph(),
+            paragraph: Self::create_new(),
         }
     }
 
@@ -178,7 +224,7 @@ impl Lorem {
     ///
     ///  ```
     /// use loremipsum::Lorem;
-    /// let len_words: usize = Lorem::len_words();
+    /// let len_words: usize = Lorem::count_words();
     /// (1..=len_words).for_each(|i: usize| {
     ///     let words_count: usize = Lorem::words(i).split_whitespace().count();
     ///     assert_eq!(words_count, i);
@@ -216,42 +262,6 @@ impl Lorem {
     }
 }
 
-/// `paragraph` returns a single paragraphs of lorem ipsum text.
-///
-/// # Examples
-///
-/// ```
-/// use loremipsum::paragraph;
-///
-/// let para = paragraph();
-/// let words = para.split_whitespace();
-/// assert_eq!(words.last().unwrap(), "laborum.");
-/// let para: String = paragraph();
-/// let words: Vec<&str> = para.split_whitespace().collect::<Vec<_>>();
-/// assert_eq!(words.first().unwrap().to_string(), String::from("Lorem"));
-/// ```
-///
-/// - Word and letter counts:
-///
-/// ```
-/// use loremipsum::paragraph;
-///
-/// let para = paragraph();
-/// assert_eq!(para.len(), 440usize);
-/// let words = para.split_whitespace();
-/// assert_eq!(words.count(), 64usize);
-/// ```
-pub fn paragraph() -> String {
-    let new_paragraph: Vec<String> = run().expect("Failed to get lorem ipsum words");
-    let mut para_buf_as_string = String::new();
-    new_paragraph.iter().for_each(|word: &String| {
-        para_buf_as_string.push_str(word);
-        para_buf_as_string.push(' ');
-    });
-
-    para_buf_as_string.trim().to_string()
-}
-
 /// Implements `run` that returns a `Result` containing a `Vec<String>` of words
 /// from the lorem ipsum text file.
 ///
@@ -286,6 +296,7 @@ pub fn run() -> Result<Vec<String>, Box<dyn Error>> {
 
     Ok(words)
 }
+
 /// Implements `read_lorem` that returns a `Result` containing a `String
 /// of the 'loremipsum` text data file.
 ///
@@ -312,21 +323,77 @@ pub fn read_lorem() -> Result<String, Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str;
+
+    // #[test]
+    fn it_lorem_chars() {
+        let len: usize = Lorem::count_chars();
+        let chars_count = Lorem::chars(len).chars().count();
+        assert_eq!(chars_count, len);
+        // TODO: Delete the mock len of 5usize below.
+        let len = len * 2;
+        (1..=len).for_each(|i: usize| {
+            let chars_count = Lorem::chars(i).chars().count();
+            assert_eq!(chars_count, i);
+        });
+        let chars_count = Lorem::chars(886).chars().count();
+        assert_eq!(chars_count, 886);
+    }
+
+    #[test]
+    fn it_lorem_words() {
+        let len: usize = Lorem::count_words();
+        (1..=len).for_each(|i: usize| {
+            let words_count: usize = Lorem::words(i).split_whitespace().count();
+            assert_eq!(words_count, i);
+            let len_words_rest: usize = Lorem::words(len - i).split_whitespace().count();
+            assert_eq!(words_count, len - len_words_rest);
+        });
+    }
+
+    #[test]
+    fn it_lorem_paragraphs() {
+        let len: usize = Lorem::count_paras();
+        (1..=len).for_each(|i: usize| {
+            let paras: String = Lorem::paragraphs(i);
+            assert_eq!(paras.split_terminator('.').count(), len * i);
+        });
+    }
+
+    #[test]
+    fn it_new_lorem() {
+        let para: String = Lorem::new().paragraph;
+        let words: str::SplitWhitespace = para.split_whitespace();
+        assert_eq!(
+            "laborum.",
+            words
+                .clone()
+                .last()
+                .expect("Failed to get last word from lorem ipsum paragraph"),
+        );
+        assert_eq!(
+            "Lorem",
+            *words
+                .collect::<Vec<&str>>()
+                .first()
+                .expect("Failed to get first word from lorem ipsum paragraph")
+        );
+    }
 
     #[test]
     fn it_read_lorem() {
-        let string = read_lorem().expect("Failed to read lorem ipsum from file");
+        let string: String = read_lorem().expect("Failed to read lorem ipsum from file");
         assert_eq!(string.len(), 440usize);
-        let words = string.split_ascii_whitespace();
+        let words: str::SplitAsciiWhitespace = string.split_ascii_whitespace();
         assert_eq!(words.count(), 64usize);
     }
 
     #[test]
     fn it_gets_array_words() {
-        let got = run();
+        let got: Result<Vec<String>, Box<dyn Error>> = run();
         assert!(got.is_ok(), "Failed to get array of words from lorem ipsum");
 
-        let len = got.unwrap().len();
+        let len: usize = got.unwrap().len();
         assert_eq!(len, 64usize);
     }
 
@@ -344,15 +411,6 @@ mod tests {
     }
 
     #[test]
-    fn it_lorem_para() {
-        let para = paragraph();
-        let paragraph_1 = lorem_para(1usize);
-        assert_eq!(para.len(), paragraph_1.len());
-        let paragraph_2 = lorem_para(2usize);
-        assert_eq!(para.len() * 2usize, paragraph_2.len());
-    }
-
-    #[test]
     fn it_matches_run_array_all_words() {
         let binding: String = read_lorem().expect("Failed to read lorem ipsum from file");
         let source: Vec<&str> = binding.split::<char>(' ').collect();
@@ -366,32 +424,6 @@ mod tests {
             assert_eq!(x, *y);
             assert_eq!(x.len(), y.len());
         });
-    }
-
-    #[test]
-    fn it_lorem_chars() {
-        let count = 5usize;
-        let chars: String = Lorem::chars(count);
-        assert_eq!(chars.len(), count);
-    }
-    #[test]
-    fn it_lorem_words() {
-        let len_words: usize = Lorem::len_words();
-
-        (1..=len_words).for_each(|i: usize| {
-            let words_count: usize = Lorem::words(i).split_whitespace().count();
-            assert_eq!(words_count, i);
-
-            let len_words_rest: usize = Lorem::words(len_words - i).split_whitespace().count();
-            assert_eq!(words_count, len_words - len_words_rest);
-        });
-    }
-    #[test]
-    fn it_lorem_paragraphs() {
-        let count = 5usize;
-        let paragraphs: String = Lorem::paragraphs(count);
-        let len: usize = Lorem::len_paras();
-        assert_eq!(paragraphs.split_terminator('.').count(), len * count);
     }
 }
 
