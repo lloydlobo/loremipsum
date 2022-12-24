@@ -109,13 +109,22 @@ impl Lorem {
             false => {
                 let paragraph: String = Self::new().paragraph;
                 let mut join_new = String::new();
-                (0..(count % count_max)).for_each(|_: usize| {
+                let index: usize = count / count_max;
+
+                (0..(index)).for_each(|_: usize| {
                     (0..count_max).for_each(|i: usize| {
                         // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
                         join_new.push_str(&paragraph.chars().nth(i).unwrap().to_string());
                     });
+                    join_new.push(' ')
                 });
-                paragraph + join_new.as_str()
+
+                join_new
+                    + paragraph
+                        .chars()
+                        .take(count - count_max - 1)
+                        .collect::<String>()
+                        .as_str()
             }
         }
     }
@@ -319,19 +328,24 @@ mod tests {
     use super::*;
     use std::str;
 
-    // #[test]
+    #[test]
     fn it_lorem_chars() {
-        let len: usize = Lorem::count_chars();
-        let chars_count = Lorem::chars(len).chars().count();
-        assert_eq!(chars_count, len);
-        // TODO: Delete the mock len of 5usize below.
-        let len = len * 2;
-        (1..=len).for_each(|i: usize| {
-            let chars_count = Lorem::chars(i).chars().count();
-            assert_eq!(chars_count, i);
+        (1..440).for_each(|i: usize| {
+            let got: String = Lorem::chars(i);
+            assert_eq!(got.len(), i);
         });
-        let chars_count = Lorem::chars(886).chars().count();
-        assert_eq!(chars_count, 886);
+
+        // let len: usize = Lorem::count_chars();
+        // let chars_count = Lorem::chars(len).chars().count();
+        // assert_eq!(chars_count, len);
+        // // TODO: Delete the mock len of 5usize below.
+        // let len = len * 1;
+        // (1..=len).for_each(|i: usize| {
+        //     let chars_count = Lorem::chars(i).chars().count();
+        //     assert_eq!(chars_count, i);
+        // });
+        // let chars_count = Lorem::chars(886).chars().count();
+        // assert_eq!(chars_count, 886);
     }
 
     #[test]
