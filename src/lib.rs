@@ -56,7 +56,7 @@
 #![deny(missing_docs)]
 
 use anyhow::Result;
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 /// The generic lorem ipsum text read from file.
 ///
@@ -106,25 +106,30 @@ impl Lorem {
         let count_max: usize = Lorem::count_chars();
         match count <= count_max {
             true => Self::new().paragraph.chars().take(count).collect(),
+            // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
             false => {
+                let mut cache = Vec::<char>::new();
+                let count_default: usize = Lorem::count_chars();
+
                 let paragraph: String = Self::new().paragraph;
-                let mut join_new = String::new();
-                let index: usize = count / count_max;
+                let mut paragraph = paragraph.chars(); // let count = source.clone().count();
+                (0..count_default).for_each(|_| cache.push(paragraph.next().unwrap()));
 
-                (0..(index)).for_each(|_: usize| {
-                    (0..count_max).for_each(|i: usize| {
-                        // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
-                        join_new.push_str(&paragraph.chars().nth(i).unwrap().to_string());
-                    });
-                    join_new.push(' ')
+                let mut result = Vec::<String>::new(); // .unwrap_or('\u{0}')
+
+                (1..=count).for_each(|i: usize| {
+                    let n = (i - 1) % count_default; // let nth = source.nth(n).unwrap().to_string();
+                    let nth = cache.get_mut(n).unwrap().to_string();
+                    result.push(nth);
+                    if (n + 1) % count_default == 0 && n != 0 {
+                        result.push(String::from(" "));
+                    }
+                    // println!("i:{}::n:{}::nth:{}", &i, &n, &nth);
                 });
+                let str = result.concat();
+                println!("{:?}; len is: {};", str, str.len());
 
-                join_new
-                    + paragraph
-                        .chars()
-                        .take(count - count_max - 1)
-                        .collect::<String>()
-                        .as_str()
+                str
             }
         }
     }
@@ -330,22 +335,18 @@ mod tests {
 
     #[test]
     fn it_lorem_chars() {
-        (1..440).for_each(|i: usize| {
-            let got: String = Lorem::chars(i);
-            assert_eq!(got.len(), i);
-        });
+        let count = 11usize;
+        let got = Lorem::chars(count);
+        assert_eq!(got, "Lorem ipsum".to_string());
 
-        // let len: usize = Lorem::count_chars();
-        // let chars_count = Lorem::chars(len).chars().count();
-        // assert_eq!(chars_count, len);
-        // // TODO: Delete the mock len of 5usize below.
-        // let len = len * 1;
-        // (1..=len).for_each(|i: usize| {
-        //     let chars_count = Lorem::chars(i).chars().count();
-        //     assert_eq!(chars_count, i);
-        // });
-        // let chars_count = Lorem::chars(886).chars().count();
-        // assert_eq!(chars_count, 886);
+        (1..Lorem::count_chars())
+            .for_each(|i: usize| assert_eq!(Lorem::chars(i).chars().count(), i));
+
+        let add = String::from("Lorem ipsum ");
+        let got = Lorem::chars(Lorem::count_chars() + add.len());
+        let expect = format!("{} {}", Lorem::new().paragraph, add);
+        assert_eq!(got, expect);
+        assert_eq!(got.len(), expect.len());
     }
 
     #[test]
