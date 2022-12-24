@@ -101,37 +101,23 @@ impl Lorem {
     ///
     /// It's important to remember that char represents a Unicode Scalar Value, and might not match your idea of what a 'character' is. Iteration over grapheme clusters may be what you actually want. This functionality is not provided by Rust's standard library, check crates.io instead.  
     ///
-    ///
+    ///  ```
+    /// # // HACK: Can create a new vec of capacity of `count` and iterate
+    /// # // on it.. one liner.
+    ///  ```
+    /// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
     pub fn chars(count: usize) -> String {
-        let count_max: usize = Lorem::count_chars();
-        match count <= count_max {
-            true => Self::new().paragraph.chars().take(count).collect(),
-            // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9....
-            false => {
-                let mut cache = Vec::<char>::new();
-                let count_default: usize = Lorem::count_chars();
-
-                let paragraph: String = Self::new().paragraph;
-                let mut paragraph = paragraph.chars(); // let count = source.clone().count();
-                (0..count_default).for_each(|_| cache.push(paragraph.next().unwrap()));
-
-                let mut result = Vec::<String>::new(); // .unwrap_or('\u{0}')
-
-                (1..=count).for_each(|i: usize| {
-                    let n = (i - 1) % count_default; // let nth = source.nth(n).unwrap().to_string();
-                    let nth = cache.get_mut(n).unwrap().to_string();
-                    result.push(nth);
-                    if (n + 1) % count_default == 0 && n != 0 {
-                        result.push(String::from(" "));
-                    }
-                    // println!("i:{}::n:{}::nth:{}", &i, &n, &nth);
-                });
-                let str = result.concat();
-                println!("{:?}; len is: {};", str, str.len());
-
-                str
-            }
-        }
+        let mut result = Vec::<String>::new(); // .unwrap_or('\u{0}')
+        let mut cache = Lorem::new().paragraph.chars().collect::<Vec<_>>();
+        let count_default: usize = Lorem::count_chars();
+        (1..=count).for_each(|i: usize| {
+            let n: usize = (i - 1) % count_default; // let nth = source.nth(n).unwrap().to_string();
+            result.push(cache.get_mut(n).unwrap().to_string());
+            if n != 0 && (n + 1) % count_default == 0 {
+                result.push(String::from(" ")); // Add a whitespace after a paragraph.
+            } // ? Mayber iterate with (0..=count)?
+        });
+        result.concat()
     }
 
     /// Returns count of total `chars` in a [`Lorem`] instance.
